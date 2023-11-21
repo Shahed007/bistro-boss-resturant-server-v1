@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const app = express();
@@ -45,6 +45,37 @@ async function run() {
       }
     });
 
+    // get cart data from the database
+    app.get(`${api}cart`, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        console.log(email);
+
+        const query = { user_email: email };
+
+        const cart = await cartCollection.find(query).toArray();
+        res.send(cart);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // Get admin
+    app.get(`${api}admin/:email`, async (req, res) => {
+      try {
+        const email = req.params?.email;
+        const query = { email };
+        const admin = await usersCollection.findOne(query);
+        if (admin?.roll === "admin") {
+          res.send({ admin: true });
+        } else {
+          res.send({ admin: false });
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
     // Add to cart route
     app.post(`${api}cart`, async (req, res) => {
       try {
@@ -74,6 +105,18 @@ async function run() {
           updateDoc,
           options
         );
+        res.send(result);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // Delete cart item
+    app.delete(`${api}cart/:id`, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await cartCollection.deleteOne(query);
         res.send(result);
       } catch (err) {
         console.log(err);
